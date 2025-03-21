@@ -1,0 +1,12 @@
+Options -Indexes
+RewriteEngine On
+
+# Allow direct access to files in public directory
+<FilesMatch "\.(jpg|jpeg|png|gif|css|js)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Protect other directories
+RewriteRule ^app/ - [F,L]
+RewriteRule ^config/ - [F,L] 
