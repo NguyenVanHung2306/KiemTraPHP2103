@@ -37,6 +37,7 @@
                     <th>Mã Học Phần</th>
                     <th>Tên Học Phần</th>
                     <th>Số Tín Chỉ</th>
+                    <th>Số lượng dự kiến</th>
                     <th>Thao Tác</th>
                 </tr>
             </thead>
@@ -46,16 +47,23 @@
                         <td><?php echo htmlspecialchars($hp['MaHP']); ?></td>
                         <td><?php echo htmlspecialchars($hp['TenHP']); ?></td>
                         <td><?php echo htmlspecialchars($hp['SoTinChi']); ?></td>
+                        <td><?php echo htmlspecialchars($hp['SoLuongDuKien'] ?? 0); ?></td>
                         <td>
                             <?php if (isset($_SESSION['maSV'])): ?>
                                 <?php
                                 // Kiểm tra xem học phần đã có trong giỏ hàng chưa
                                 $isInCart = isset($_SESSION['cart']) && in_array($hp['MaHP'], $_SESSION['cart']);
+                                // Kiểm tra nếu đã hết chỗ
+                                $hetCho = ($hp['SoLuongDuKien'] <= 0);
                                 ?>
-                                <a href="index.php?controller=hocphan&action=dangKy&maHP=<?php echo urlencode($hp['MaHP']); ?>"
-                                    class="btn <?php echo $isInCart ? 'btn-secondary' : 'btn-success'; ?> btn-sm">
-                                    <?php echo $isInCart ? 'Đã thêm vào giỏ' : 'Đăng Kí'; ?>
-                                </a>
+                                <?php if ($hetCho): ?>
+                                    <button class="btn btn-secondary btn-sm" disabled>Hết chỗ</button>
+                                <?php else: ?>
+                                    <a href="index.php?controller=hocphan&action=dangKy&maHP=<?php echo urlencode($hp['MaHP']); ?>"
+                                        class="btn <?php echo $isInCart ? 'btn-secondary' : 'btn-success'; ?> btn-sm">
+                                        <?php echo $isInCart ? 'Đã thêm vào giỏ' : 'Đăng Kí'; ?>
+                                    </a>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <a href="index.php?controller=sinhvien&action=login" class="btn btn-warning btn-sm">
                                     Đăng nhập để đăng ký

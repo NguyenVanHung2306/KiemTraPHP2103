@@ -109,14 +109,44 @@ class HocPhanController
 
         $success = true;
         $errorMessages = [];
+        $successfulRegistrations = [];
 
         // Bắt đầu lưu từng học phần vào database
         foreach ($_SESSION['cart'] as $maHP) {
+            // Kiểm tra số lượng đăng ký còn không
+            $soLuongKiemTra = $this->hocPhanModel->getHocPhanByMaHP($maHP);
+            if ($soLuongKiemTra && $soLuongKiemTra['SoLuongDuKien'] <= 0) {
+                $success = false;
+                $errorMessages[] = "Học phần " . $maHP . " đã hết chỗ đăng ký";
+                continue;
+            }
+
+            // Giảm số lượng đăng ký
+            $capNhatSoLuong = $this->hocPhanModel->giamSoLuongDangKy($maHP);
+            if (!$capNhatSoLuong) {
+                $success = false;
+                $errorMessages[] = "Không thể cập nhật số lượng cho học phần " . $maHP . ": " . $this->hocPhanModel->getLastErrorMessage();
+                continue;
+            }
+
+            // Đăng ký học phần
             $result = $this->hocPhanModel->dangKyHocPhan($maSV, $maHP);
 
             if (!$result) {
+                // Nếu đăng ký thất bại, tăng lại số lượng
+                $this->hocPhanModel->tangSoLuongDangKy($maHP);
                 $success = false;
                 $errorMessages[] = "Lỗi đăng ký học phần " . $maHP . ": " . $this->hocPhanModel->getLastErrorMessage();
+            } else {
+                // Lưu các học phần đăng ký thành công
+                $successfulRegistrations[] = $maHP;
+            }
+        }
+
+        // Xóa các học phần đã đăng ký thành công khỏi giỏ hàng
+        if (!empty($successfulRegistrations)) {
+            foreach ($successfulRegistrations as $maHP) {
+                $this->removeFromCart($maHP);
             }
         }
 

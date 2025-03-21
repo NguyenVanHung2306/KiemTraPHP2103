@@ -381,4 +381,89 @@ class HocPhanModel
             return false;
         }
     }
+
+    // Cập nhật số lượng học phần khi đăng ký
+    public function giamSoLuongDangKy($maHP)
+    {
+        try {
+            // Kiểm tra xem học phần có chỗ còn trống không
+            $query = "SELECT SoLuongDuKien FROM HocPhan WHERE MaHP = :maHP";
+            $statement = $this->conn->prepare($query);
+            $statement->bindParam(':maHP', $maHP);
+            $statement->execute();
+            $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if (!$result || $result['SoLuongDuKien'] <= 0) {
+                $this->lastErrorMessage = "Học phần $maHP đã hết chỗ hoặc không tồn tại";
+                error_log($this->lastErrorMessage);
+                return false;
+            }
+
+            // Giảm số lượng dự kiến đi 1
+            $query = "UPDATE HocPhan SET SoLuongDuKien = SoLuongDuKien - 1 WHERE MaHP = :maHP AND SoLuongDuKien > 0";
+            $statement = $this->conn->prepare($query);
+            $statement->bindParam(':maHP', $maHP);
+            $result = $statement->execute();
+
+            if ($result && $statement->rowCount() > 0) {
+                error_log("Đã giảm số lượng dự kiến cho học phần $maHP");
+                return true;
+            } else {
+                $this->lastErrorMessage = "Không thể giảm số lượng dự kiến cho học phần $maHP";
+                error_log($this->lastErrorMessage);
+                return false;
+            }
+        } catch (PDOException $e) {
+            $this->lastErrorMessage = "Lỗi khi giảm số lượng dự kiến: " . $e->getMessage();
+            error_log($this->lastErrorMessage);
+            return false;
+        }
+    }
+
+    // Tăng số lượng học phần khi hủy đăng ký
+    public function tangSoLuongDangKy($maHP)
+    {
+        try {
+            // Tăng số lượng dự kiến lên 1
+            $query = "UPDATE HocPhan SET SoLuongDuKien = SoLuongDuKien + 1 WHERE MaHP = :maHP";
+            $statement = $this->conn->prepare($query);
+            $statement->bindParam(':maHP', $maHP);
+            $result = $statement->execute();
+
+            if ($result && $statement->rowCount() > 0) {
+                error_log("Đã tăng số lượng dự kiến cho học phần $maHP");
+                return true;
+            } else {
+                $this->lastErrorMessage = "Không thể tăng số lượng dự kiến cho học phần $maHP";
+                error_log($this->lastErrorMessage);
+                return false;
+            }
+        } catch (PDOException $e) {
+            $this->lastErrorMessage = "Lỗi khi tăng số lượng dự kiến: " . $e->getMessage();
+            error_log($this->lastErrorMessage);
+            return false;
+        }
+    }
+
+    // Kiểm tra số lượng đăng ký còn lại
+    public function kiemTraSoLuongConLai($maHP)
+    {
+        try {
+            $query = "SELECT SoLuongDuKien FROM HocPhan WHERE MaHP = :maHP";
+            $statement = $this->conn->prepare($query);
+            $statement->bindParam(':maHP', $maHP);
+            $statement->execute();
+            $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if ($result) {
+                return $result['SoLuongDuKien'];
+            } else {
+                return 0;
+            }
+        } catch (PDOException $e) {
+            $this->lastErrorMessage = "Lỗi khi kiểm tra số lượng còn lại: " . $e->getMessage();
+            error_log($this->lastErrorMessage);
+            return 0;
+        }
+    }
 }
